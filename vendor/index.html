@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en" class="theme-sketch">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ReState — From Stages to States: Unified Iterative Reasoning for MLLMs</title>
+<meta name="description" content="ReState reformulates multimodal chain-of-thought from a stage-driven pipeline into a state-driven iterative process: one MLLM constructs, preserves, and corrects its own reasoning state." />
+<!-- citation_* tags are what Google Scholar reads to index a paper page.
+     TODO: uncomment citation_pdf_url once the PDF / arXiv entry is online. -->
+<meta name="citation_title" content="From Stages to States: Unified Iterative Reasoning for Multimodal Large Language Models" />
+<meta name="citation_author" content="Chuang Yu" />
+<meta name="citation_author" content="Xuefei Ma" />
+<meta name="citation_author" content="Yuanhao Feng" />
+<meta name="citation_author" content="Wuxiong Zeng" />
+<meta name="citation_author" content="Bo Wang" />
+<meta name="citation_author" content="Minghong Cai" />
+<meta name="citation_author" content="Dongming Wu" />
+<meta name="citation_author" content="Fei Zhou" />
+<meta name="citation_author" content="Chen Tang" />
+<meta name="citation_author" content="Wenwen Tong" />
+<meta name="citation_author" content="Lewei Lu" />
+<meta name="citation_author" content="Xiangyu Yue" />
+<meta name="citation_publication_date" content="2026" />
+<!-- <meta name="citation_pdf_url" content="https://.../restate.pdf" /> -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="ReState — From Stages to States" />
+<meta property="og:description" content="One MLLM constructs, preserves, and corrects its own reasoning state." />
+<meta property="og:image" content="assets/fig1.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+<!-- fonts: local copies (Caveat, Patrick Hand, Inter — SIL OFL). No external requests: the page works offline and loads fast in every region. -->
+<link rel="stylesheet" href="vendor/fonts.css" />
+<!-- Styles: style.css = base layout, theme-sketch.css = hand-drawn stick-figure look, intro.css = opening animation -->
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="theme-sketch.css" />
+<link rel="stylesheet" href="intro.css" />
+<!-- rough.js (MIT) draws the pencil frames; sketch.js draws the stick figures -->
+<script src="vendor/rough.js"></script>
+<script src="sketch.js"></script>
+</head>
+<body>
+
+<!-- =====================================================================
+     OPENING ANIMATION (≈12 s, skippable). Texts are edited here,
+     data-t = start second, data-s = seconds per character; the rest of the timing lives in intro.css.
+     At the end the title flies onto the chalkboard (intro.js).
+     To switch the intro off: delete this block and the intro.js <script> right below it.
+     ===================================================================== -->
+<div id="intro" class="intro" aria-hidden="true">
+  <div class="in-bg"></div>
+  <div class="in-fx"><i class="in-grain"></i><i class="in-scan"></i><i class="in-vig"></i><i class="in-glow"></i></div>
+  <div class="in-stage">
+    <div class="in-act in-act1">
+      <p class="in-l1 in-type" data-t="0.4" data-s="0.034">A model slips mid-reasoning…</p>
+      <p class="in-l2 in-type" data-t="1.9" data-s="0.04">…can it fix its own mistake?</p>
+    </div>
+    <div class="in-act in-act2">
+      <p class="in-m in-type" data-t="4.9" data-s="0.04">One model. One loop.</p>
+      <p class="in-m in-type" data-t="5.8" data-s="0.022">It builds, keeps, and fixes its own reasoning state.</p>
+      <p class="in-term"><span class="in-type" data-t="7.0" data-s="0.022">&gt; S<sub>0</sub> = φ → S<sub>1</sub> ✗ → S<sub>2</sub> ✓ → S<sub>T</sub></span><i class="in-caret">█</i></p>
+    </div>
+    <div class="in-final">
+      <h2 class="in-title"><span class="in-tl">From <span class="in-stage-w">Stages</span> to <span class="in-state-w">States</span>:</span><span class="in-tl in-tl2">Unified Iterative Reasoning <span class="in-tail">for MLLMs</span></span></h2>
+      <p class="in-exp"><b>Re</b>State = <b>Re</b>asoning-<b>State</b> Refinement</p>
+    </div>
+  </div>
+  <button class="in-skip" type="button">Skip ›</button>
+</div>
+<script src="intro.js"></script>
+
+<!-- =====================================================================
+     TOP BAR  — nav links must match section ids below
+     ===================================================================== -->
+<header class="bar">
+  <div class="bar-inner">
+    <a class="brand" href="#top" aria-label="ReState — back to top">
+      <!-- robot logo in two layers (head tilts, body bobs, eyes blink) + the word (tilts on its own). main.js initBrand() -->
+      <span class="brand-bot" aria-hidden="true">
+        <span class="bot-body"><img src="assets/logo_body.png" alt="" /></span>
+        <span class="bot-head"><img src="assets/logo_head.png" alt="" /><i class="bot-lid l"></i><i class="bot-lid r"></i></span>
+      </span>
+      <span class="brand-word"><span class="re">Re</span><span class="st">State</span></span>
+    </a>
+    <nav class="nav">
+      <a href="#paradigm">Paradigm</a>
+      <a href="#method">Method</a>
+      <a href="#demo">Demo</a>
+      <a href="#dataset">Dataset</a>
+      <a href="#results">Results</a>
+      <a href="#qualitative">Examples</a>
+      <a href="#cite">BibTeX</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- =====================================================================
+     HERO
+     ===================================================================== -->
+<section id="top" class="hero">
+  <!-- title chalkboard (wood frame, chalk tray, faint notes: sketch.js KIND.chalkboard; teacher figure: boardTeacher()).
+       The full paper title is ONE heading in two lines; line 1 is 1.15x line 2 (theme-sketch.css).
+       Lines never wrap on their own: main.js fitBanner() shrinks the whole title if a line would overflow.
+       The yellow loop next to "States" = the same model iterating on its own state. -->
+  <div class="title-board">
+    <h1 class="title">
+      <span class="t-line">From <span class="w-stage">Stages</span> to <span class="w-state">States<svg class="t-loop" viewBox="0 0 40 40" aria-hidden="true"><path d="M31.3 13.5 A13 13 0 1 1 20 7" /><path d="M14.5 2.5 L20.5 7 L15 11.5" /></svg></span>:</span>
+      <span class="t-line">Unified Iterative Reasoning <span class="t-tail">for <abbr title="Multimodal Large Language Models">MLLMs</abbr></span></span>
+    </h1>
+
+    <!-- authors: <sup> numbers match the affiliation line; &dagger; = corresponding author -->
+    <div class="authors">
+      <p class="names">
+      <span class="au"><a href="https://yuchuang1205.github.io/" target="_blank" rel="noopener">Chuang Yu</a><sup>1</sup>,</span>
+      <span class="au"><a href="https://openreview.net/profile?id=~Xuefei_Ma1" target="_blank" rel="noopener">Xuefei Ma</a><sup>2</sup>,</span>
+      <span class="au"><a href="https://scholar.google.com/citations?hl=zh-CN&user=emdXrWoAAAAJ" target="_blank" rel="noopener">Yuanhao Feng</a><sup>3</sup>,</span>
+      <span class="au"><a href="https://scholar.google.com/citations?hl=zh-CN&user=pU_OpsMAAAAJ" target="_blank" rel="noopener">Wuxiong Zeng</a><sup>3</sup>,</span>
+      <span class="au"><a href="https://openreview.net/profile?id=~Bo_Wang50" target="_blank" rel="noopener">Bo Wang</a><sup>3</sup>,</span>
+      <span class="au"><a href="https://onevfall.github.io/personal_page/" target="_blank" rel="noopener">Minghong Cai</a><sup>1</sup>,</span>
+      <span class="au"><a href="https://wudongming97.github.io/" target="_blank" rel="noopener">Dongming Wu</a><sup>1</sup>,</span>
+      <span class="au"><a href="https://scholar.google.com/citations?user=Sd2wRM4AAAAJ&hl=zh-CN" target="_blank" rel="noopener">Fei Zhou</a><sup>1</sup>,</span>
+      <span class="au"><a href="https://www.chentang.cc/" target="_blank" rel="noopener">Chen Tang</a><sup>1</sup>,</span>
+      <span class="au"><a href="https://scholar.google.com/citations?hl=zh-CN&user=aGhHuEIAAAAJ" target="_blank" rel="noopener">Wenwen Tong</a><sup>4</sup>,</span>
+      <span class="au"><a href="https://scholar.google.com/citations?user=zdgKJXIAAAAJ&hl=zh-CN" target="_blank" rel="noopener">Lewei Lu</a><sup>5</sup>,</span>
+      <span class="au"><a href="https://xyue.io/" target="_blank" rel="noopener">Xiangyu Yue</a><sup>1&dagger;</sup></span>
+      </p>
+      <p class="affils"><sup>1</sup>MMLab, CUHK &nbsp;·&nbsp; <sup>2</sup>PolyU &nbsp;·&nbsp; <sup>3</sup>Tencent &nbsp;·&nbsp; <sup>4</sup>Peking University &nbsp;·&nbsp; <sup>5</sup>CPII</p>
+      <p class="anote">&dagger; Corresponding author</p>
+    </div>
+
+    <div class="links">
+      <!-- TODO: replace href with the arXiv / PDF link once it is online -->
+      <a class="btn primary" href="#" data-todo="paper"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z M14 2v6h6" /></svg>Paper</a>
+      <a class="btn" href="https://github.com/YuChuang1205/ReState" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6" /></svg>Code</a>
+      <a class="btn" href="#dataset"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>VersaCoT-10K</a>
+      <a class="btn" href="#cite"><svg viewBox="0 0 24 24"><path d="M7 7h4v4H8v3H5v-4zM15 7h4v4h-3v3h-3v-4z"/></svg>BibTeX</a>
+    </div>
+  </div>
+
+  <div class="hero-text">
+    <p class="expand"><b><span class="w-stage">Re</span><span class="w-state">State</span></b> = <b>Re</b>asoning-<b>State</b> Refinement</p>
+
+
+    <!-- Headline numbers (all from the paper; see data.js header for sources) -->
+    <div class="stats">
+      <div class="stat"><b>81.90</b><span>VersaCoT-10K with a 9B model — above every open-source zero-shot model except the 2.8T Kimi-K3</span></div>
+      <div class="stat"><b>89.00</b><span>M³CoT — only 2.61 pts below human performance</span></div>
+      <div class="stat"><b class="c-state">+13.07</b><span>pts over two-stage Multimodal-CoT on M³CoT</span></div>
+      <div class="stat"><b>1 model</b><span>to deploy (vs. two for MIND), with 31.2% less training time</span></div>
+    </div>
+  </div>
+
+  <!-- hero illustration: sketch.js heroScene() draws the whiteboard animation inside this box -->
+  <div class="hero-visual" aria-hidden="true"></div>
+</section>
+
+<!-- =====================================================================
+     TL;DR
+     ===================================================================== -->
+<section class="tldr">
+  <p><span class="tag">TL;DR</span> Learning-based multimodal CoT methods usually chain separately trained <em class="w-stage">stages</em> (generate a CoT, then answer). ReState instead trains <strong>one MLLM</strong> as a shared <em class="w-state">state-update operator</em>: given an empty, correct, or erroneous reasoning state, it outputs a refined state and an answer. Trained also on its own historical states and applied recursively at inference, the same model <strong>constructs, preserves, and corrects</strong> its chain-of-thought — no critic, reflection module, or separate correction stage.</p>
+</section>
+
+<!-- =====================================================================
+     01  PARADIGM
+     ===================================================================== -->
+<section id="paradigm" class="block">
+  <div class="sec-head">
+    <span class="sec-num">01</span>
+    <h2>Stage-centric vs. state-centric</h2>
+    <p class="lede">Most learning-based MCoT methods assign reasoning behaviors to predefined stages with stage-specific models, mappings, or objectives. ReState asks a different question: not <em>which stage is the model in</em>, but <em>what reasoning state does it currently have, and how should that state be updated?</em></p>
+  </div>
+
+  <div class="toggle" role="tablist">
+    <button class="tg" data-mode="stage" role="tab">Stage-centric <small>(prior work)</small></button>
+    <button class="tg on" data-mode="state" role="tab">State-centric <small>(ReState)</small></button>
+  </div>
+
+  <div class="paradigm-wrap">
+    <div class="pd pd-stage" data-panel="stage">
+      <div class="flow">
+        <div class="box in">Multimodal input<br><code>X = {I, Q, O, C}</code></div>
+        <span class="arr">→</span>
+        <div class="box model blue">M<sub>θ₁</sub><small>CoT generation</small></div>
+        <span class="arr">→</span>
+        <div class="box">Reasoning chain<br><code>R̂</code></div>
+        <span class="arr">→</span>
+        <div class="box model blue">M<sub>θ₂</sub><small>Answer inference</small></div>
+        <span class="arr">→</span>
+        <div class="box out">Answer <code>Â</code></div>
+      </div>
+      <div class="gap-note">
+        <span class="warn">!</span>
+        <div><b>Fragmented reasoning.</b> Construction, discrimination, and correction live in separate stages with separate objectives — there is no unified mechanism for how reasoning <em>evolves</em>.</div>
+      </div>
+      <div class="gap-note">
+        <span class="warn">!</span>
+        <div><b>Training–inference reasoning-state gap.</b> M<sub>θ₂</sub> is trained on annotated chains <code>R<sup>GT</sup></code> but receives model-generated chains <code>R̂</code> at inference, so upstream errors propagate downstream.</div>
+      </div>
+    </div>
+
+    <div class="pd pd-state on" data-panel="state">
+      <div class="flow">
+        <div class="box in">Mixed input<br><code>(X, S<sub>t</sub>)</code></div>
+        <span class="arr">→</span>
+        <div class="box model orange big">M<sub>θ</sub><small>one shared state-update operator</small></div>
+        <span class="arr">→</span>
+        <div class="box out">Refined state <code>S<sub>t+1</sub></code><br>Answer <code>Â<sub>t+1</sub></code></div>
+      </div>
+      <div class="loop-line"><span>state feedback · S<sub>t+1</sub> becomes the next S<sub>t</sub></span></div>
+      <div class="state-chips">
+        <span class="sc s-empty">φ <em>empty</em> → construct</span>
+        <span class="sc s-pos">R<sup>+</sup> <em>correct</em> → preserve</span>
+        <span class="sc s-neg">R<sup>−</sup> <em>erroneous</em> → correct</span>
+        <span class="sc s-hist">R<sup>h</sup> <em>self-generated</em> → refine</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Evidence: matrices are generated by main.js from MAIN in data.js -->
+  <div class="evidence">
+    <div class="ev-text">
+      <p class="kicker">Empirical symptom of the gap</p>
+      <h3>Adding a CoT stage can hurt</h3>
+      <p>Under matched backbones and training, the two-stage Multimodal-CoT is <b>worse than plain Direct SFT in 8 of 9</b> dataset–backbone settings (down to −8.80 on M³CoT). ReState, which trains on model-induced states, is better than Direct SFT in <b>all 9</b>.</p>
+      <p class="note">Cells show accuracy change vs. Direct SFT (pts).</p>
+    </div>
+    <div class="ev-mats">
+      <div class="mat-wrap"><p class="mat-title">Multimodal-CoT − Direct SFT</p><table class="mat" id="mat-mcot"></table></div>
+      <div class="mat-wrap"><p class="mat-title">ReState − Direct SFT</p><table class="mat" id="mat-restate"></table></div>
+    </div>
+  </div>
+
+  <details class="orig">
+    <summary>View original Figure 1</summary>
+    <img class="zoom" src="assets/fig1.jpg" alt="Figure 1: comparison of reasoning paradigms and performance" loading="lazy" />
+  </details>
+</section>
+
+<!-- =====================================================================
+     02  METHOD
+     ===================================================================== -->
+<section id="method" class="block alt">
+  <div class="sec-head">
+    <span class="sec-num">02</span>
+    <h2>Method: URSM + CRSL</h2>
+    <p class="lede">Two complementary components. <b>URSM</b> puts construction, preservation, and correction into one shared state space; <b>CRSL</b> closes the loop by training on the model's own historical states and recursing at inference.</p>
+  </div>
+
+  <div class="method-grid">
+    <article class="card">
+      <p class="kicker">Unified Reasoning State Modeling</p>
+      <h3>URSM — one operator, three behaviors</h3>
+      <div class="eq">(S<sub>t+1</sub>, Â<sub>t+1</sub>) = M<sub>θ</sub>(X, S<sub>t</sub>), &nbsp; S<sub>t</sub> ∈ {φ, R<sup>+</sup>, R<sup>−</sup>}</div>
+      <div class="ursm-tabs">
+        <button class="ut on" data-s="empty"><b>φ</b>Empty</button>
+        <button class="ut" data-s="pos"><b>R<sup>+</sup></b>Correct</button>
+        <button class="ut" data-s="neg"><b>R<sup>−</sup></b>Erroneous</button>
+      </div>
+      <div class="ursm-body" id="ursm-body"></div>
+      <p class="note">X = {image, question, options, caption}; φ is the token <code>[EMPTY_SOLUTION]</code>. Each epoch, every sample yields two views: one with φ and one with a non-empty state, where R<sup>+</sup> and R<sup>−</sup> are sampled with equal probability.</p>
+    </article>
+
+    <article class="card">
+      <p class="kicker">Closed-Loop Reasoning-State Learning</p>
+      <h3>CRSL — learn from your own history</h3>
+      <div class="eq">H<sub>i</sub> = {Ŝ<sup>i</sup><sub>(1)</sub>, …, Ŝ<sup>i</sup><sub>(k)</sub>}, &nbsp; S<sub>t</sub> ∈ {φ, R<sup>+</sup>, R<sup>−</sup>, R<sup>h</sup>}</div>
+      <div class="loop3">
+        <span>state generation</span><i>→</i><span>state feedback</span><i>→</i><span>state update</span><i class="back">↺</i>
+      </div>
+      <div class="pool-demo">
+        <div class="pool-head">
+          <span>Per-sample history pool <code>H<sub>i</sub></code> · capacity 2 · FIFO</span>
+          <button id="pool-btn" class="mini">Train one round ▸</button>
+        </div>
+        <div class="pool" id="pool">
+          <div class="slot empty">empty</div><div class="slot empty">empty</div>
+        </div>
+        <p class="pool-log" id="pool-log">Each round, the state the model generates for sample <i>i</i> enters the pool and is reused as a training input <code>R<sup>h</sup></code>.</p>
+      </div>
+      <div class="eq small">Inference: S<sub>0</sub> = φ, &nbsp; (S<sub>t+1</sub>, Â<sub>t+1</sub>) = M<sub>θ</sub>(X, S<sub>t</sub>), &nbsp; Â = Â<sub>T</sub></div>
+    </article>
+  </div>
+
+  <ul class="props">
+    <li><b>1</b> MLLM for every behavior</li>
+    <li><b>0</b> critics / reflection modules</li>
+    <li><b>0</b> separate correction stages</li>
+    <li><b>2</b>-slot self-history pool per sample</li>
+  </ul>
+
+  <figure class="wide-fig">
+    <img class="zoom" src="assets/fig2.jpg" alt="Figure 2: overview of the ReState framework" loading="lazy" />
+    <figcaption><b>Figure 2.</b> During training, URSM learns a shared state-update operator from empty, correct, and erroneous reasoning states, while CRSL feeds model-generated historical states back into training to reduce the training–inference reasoning-state mismatch. At inference, the same model recursively updates the current reasoning state and answer.</figcaption>
+  </figure>
+</section>
+
+<!-- =====================================================================
+     03  DEMO  (content comes from CASES in data.js)
+     ===================================================================== -->
+<section id="demo" class="block">
+  <div class="sec-head">
+    <span class="sec-num">03</span>
+    <h2>Watch a reasoning state evolve</h2>
+    <p class="lede">Real outputs from the paper (Figs. 14–16). Step through the rounds: <mark class="err">red</mark> marks erroneous reasoning, <mark class="warnm">amber</mark> a reasoning–answer mismatch, <mark class="fix">green</mark> the corrected or preserved evidence. One model does all of it.</p>
+  </div>
+
+  <div class="case-tabs" id="case-tabs"></div>
+
+  <div class="demo">
+    <aside class="q-panel">
+      <div class="q-meta" id="q-meta"></div>
+      <img id="q-img" class="zoom" src="" alt="Question image" />
+      <p class="q-text" id="q-text"></p>
+      <ul class="q-opts" id="q-opts"></ul>
+      <details class="ref">
+        <summary>Reference CoT</summary>
+        <p id="q-ref"></p>
+      </details>
+    </aside>
+
+    <div class="r-panel">
+      <div class="timeline" id="timeline"></div>
+      <div class="r-controls">
+        <button class="mini" id="r-prev">◂ Prev</button>
+        <button class="mini play" id="r-play">▶ Play</button>
+        <button class="mini" id="r-next">Next ▸</button>
+      </div>
+      <div class="r-card" id="r-card"></div>
+      <p class="note">The input-state labels (construct / correct / preserve) are our annotations for readability. The model only receives its previous state — it is never told whether that state is right or wrong.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     04  DATASET
+     ===================================================================== -->
+<section id="dataset" class="block alt">
+  <div class="sec-head">
+    <span class="sec-num">04</span>
+    <h2>VersaCoT-10K</h2>
+    <p class="lede">10,000 single-image multiple-choice samples with visually grounded, quality-controlled CoT across eight heterogeneous visual reasoning domains — 1,250 per domain, split 7 : 1 : 2 into train / val / test.</p>
+  </div>
+
+  <div class="ds-stats">
+    <div><b>10,000</b><span>samples</span></div>
+    <div><b>8</b><span>domains × 1,250</span></div>
+    <div><b>170.9</b><span>avg CoT words (median 162, range 50–537)</span></div>
+    <div><b>2–9</b><span>options per question</span></div>
+  </div>
+
+  <ol class="pipeline">
+    <li><span>1</span><b>Collect &amp; standardize</b><p>Reasoning-intensive samples from 8 public benchmarks, unified into one multiple-choice format with options, answer, and image caption.</p></li>
+    <li><span>2</span><b>Annotate &amp; filter</b><p>Gemini-3-Flash writes visually grounded CoTs. Rule filters (200–4,000 chars, answer-leak phrases) plus a separate Gemini-3.5-Flash judge (3 binary checks + 5 scores; ≥ 8 kept).</p></li>
+    <li><span>3</span><b>Augment states</b><p>Following RAD, each CoT gets positive states (diverse, semantically consistent) and hard negative states (similar, semantically reversed). Historical states R<sup>h</sup> are generated online during training.</p></li>
+  </ol>
+
+  <div class="domains" id="domains"></div>
+
+  <div class="ds-row">
+    <div class="card chart-card">
+      <h3>Number of options per question</h3>
+      <div class="chart-box short"><canvas id="opt-chart"></canvas></div>
+      <p class="note">Option counts inherited from source tasks are kept, rather than forcing a fixed answer space.</p>
+    </div>
+    <figure class="card fig-card">
+      <img class="zoom" src="assets/fig3.jpg" alt="Figure 3: construction pipeline of VersaCoT-10K" loading="lazy" />
+      <figcaption><b>Figure 3.</b> Construction pipeline of VersaCoT-10K.</figcaption>
+      <img class="zoom" src="assets/fig4_stats.jpg" alt="Figure 7: statistics of VersaCoT-10K" loading="lazy" style="margin-top:1rem" />
+      <figcaption><b>Figure 7.</b> Sources and splits per domain, CoT length distribution, and option counts.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- =====================================================================
+     05  RESULTS  (all numbers from data.js)
+     ===================================================================== -->
+<section id="results" class="block">
+  <div class="sec-head">
+    <span class="sec-num">05</span>
+    <h2>Results</h2>
+    <p class="lede">All comparisons below use the same backbone and training setting. Across three backbones, ReState beats Direct SFT, Multimodal-CoT, and MIND by <b>0.90–4.60</b> pts on VersaCoT-10K, <b>0.83–2.87</b> on ScienceQA, and <b>0.18–13.07</b> on M³CoT.</p>
+  </div>
+
+  <div class="findings">
+    <div class="fd"><b>Best average on every dataset × backbone</b><p>9 / 9 matched-backbone settings, with gains spread across domains and sub-tasks rather than one category — e.g. M³CoT Theory 61.90 → 90.48 over Direct SFT (Qwen3.5-9B).</p></div>
+    <div class="fd"><b>Not just more inference rounds</b><p>Without iterative self-refinement — i.e. at inference cost comparable to MIND — ReState still leads MIND by 0.15–0.90 pts on VersaCoT-10K.</p></div>
+    <div class="fd"><b>Cheaper to train and serve</b><p>Training time 9.86 h → 6.78 h (−31.2%) vs. MIND, and one model to deploy instead of two.</p></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h3>Comparison with CoT frameworks</h3>
+      <div class="seg" id="ds-seg">
+        <button class="on" data-ds="versacot">VersaCoT-10K</button>
+        <button data-ds="scienceqa">ScienceQA</button>
+        <button data-ds="m3cot">M³CoT</button>
+      </div>
+    </div>
+    <div class="chart-box"><canvas id="main-chart"></canvas></div>
+    <p class="note" id="main-note"></p>
+  </div>
+
+  <div class="res-grid">
+    <div class="card">
+      <div class="card-head">
+        <h3>Iterative self-refinement</h3>
+        <div class="seg" id="iter-seg">
+          <button class="on" data-ds="versacot">VersaCoT</button>
+          <button data-ds="scienceqa">SciQA</button>
+          <button data-ds="m3cot">M³CoT</button>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="iter-chart"></canvas></div>
+      <p class="note">Round 0 is the initial reasoning. One extra round already adds 1.10–2.65 (VersaCoT-10K) and 1.99–3.62 (M³CoT) pts; performance then stabilizes. Reported numbers are the peak dataset-level accuracy along a fixed 9-round trajectory — no per-sample round selection.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>VersaCoT-10K leaderboard (avg %)</h3></div>
+      <div class="chart-box tall"><canvas id="board-chart"></canvas></div>
+      <p class="note">Selected rows from the full table. Fine-tuned and zero-shot models are evaluated under different settings, so this is not a strictly matched comparison.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h3>Per-domain accuracy on VersaCoT-10K</h3>
+      <div class="seg" id="bb-seg">
+        <button data-bb="0">Qwen2.5-VL-7B</button>
+        <button data-bb="1">Qwen3-VL-8B</button>
+        <button class="on" data-bb="2">Qwen3.5-9B</button>
+      </div>
+    </div>
+    <div class="table-wrap"><table class="tbl" id="domain-table"></table></div>
+    <p class="note">Bold = best among fine-tuned methods (zero-shot row shown for reference). MED = medical, DRIVE = driving &amp; safety, COMMON = visual commonsense, DIAG = scientific diagram, SPAT = spatial, GEO = geometry &amp; math, CHART = chart computation, MULTI = multidisciplinary.</p>
+  </div>
+
+  <div class="res-grid">
+    <div class="card">
+      <div class="card-head">
+        <h3>Break-down ablation</h3>
+        <div class="seg" id="abl-seg">
+          <button class="on" data-ds="versacot">VersaCoT</button>
+          <button data-ds="scienceqa">SciQA</button>
+          <button data-ds="m3cot">M³CoT</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table class="tbl abl" id="abl-table"></table></div>
+      <p class="note">SHS = training-time self-history states; ISR = inference-time iterative self-refinement (both part of CRSL). URSM alone already gives up to +4.96 pts (M³CoT).</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Every reasoning state matters</h3></div>
+      <div class="chart-box"><canvas id="state-chart"></canvas></div>
+      <p class="note">VersaCoT-10K, removing one state type from full ReState. Dropping R⁺ or Rʰ costs up to 2.40 / 2.45 pts on Qwen3.5-9B.</p>
+    </div>
+  </div>
+
+  <div class="res-grid">
+    <div class="card">
+      <div class="card-head">
+        <h3>Better CoTs, not just better answers</h3>
+        <div class="seg" id="cot-seg">
+          <button data-bb="0">7B</button>
+          <button data-bb="1">8B</button>
+          <button class="on" data-bb="2">9B</button>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="cot-chart"></canvas></div>
+      <p class="note">Judge-based CoT quality on VersaCoT-10K (Qwen3.8-27B as judge, 0–10). ReState scores highest on every metric for all three backbones.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Cross-dataset generalization</h3>
+        <div class="seg" id="gen-seg">
+          <button class="on" data-ds="m3cot">→ M³CoT</button>
+          <button data-ds="scienceqa">→ ScienceQA</button>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="gen-chart"></canvas></div>
+      <p class="note">Trained on VersaCoT-10K only, no target fine-tuning. On M³CoT, Direct SFT falls below the original model on two backbones, while ReState improves all three. On ScienceQA, ReState is 0.52 below the original Qwen3-VL-8B but still above Direct SFT.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     06  QUALITATIVE COMPARISON  (cards generated from COMPARE in data.js)
+     ===================================================================== -->
+<section id="qualitative" class="block alt">
+  <div class="sec-head">
+    <span class="sec-num">06</span>
+    <h2>Same question, four methods</h2>
+    <p class="lede">Direct SFT, Multimodal-CoT, and MIND often write fluent CoTs grounded in a wrong visual observation or a misleading local cue, and the error propagates to the answer. Click a card to open the full comparison (Figs. 8–13).</p>
+  </div>
+  <div class="gallery" id="gallery"></div>
+</section>
+
+<!-- =====================================================================
+     07  LIMITATIONS
+     ===================================================================== -->
+<section id="limits" class="block narrow">
+  <div class="sec-head">
+    <span class="sec-num">07</span>
+    <h2>Limitations</h2>
+  </div>
+  <ul class="limits">
+    <li><b>Task format.</b> Experiments focus on multiple-choice reasoning; open-ended VQA, video, and longer-horizon reasoning remain to be tested.</li>
+    <li><b>Inference cost.</b> Recursive updates call the same model several times. Most gains arrive in the first few rounds, and without any iteration ReState still beats MIND. More efficient recurrence (e.g. looped Transformers) is future work.</li>
+  </ul>
+</section>
+
+<!-- =====================================================================
+     BIBTEX  — edit the citation text here
+     ===================================================================== -->
+<section id="cite" class="block alt">
+  <div class="sec-head">
+    <span class="sec-num">08</span>
+    <h2>BibTeX</h2>
+  </div>
+  <div class="bib">
+    <button class="copy" data-target="bib-code">Copy</button>
+<pre id="bib-code"><code>@article{restate2026,
+  title   = {From Stages to States: Unified Iterative Reasoning for Multimodal Large Language Models},
+  author  = {Chuang Yu and Xuefei Ma and Yuanhao Feng and Wuxiong Zeng and Bo Wang and
+             Minghong Cai and Dongming Wu and Fei Zhou and Chen Tang and Wenwen Tong and
+             Lewei Lu and Xiangyu Yue},
+  journal = {arXiv preprint},
+  year    = {2026}
+}</code></pre>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <p class="dim">Code and data: <a href="https://github.com/YuChuang1205/ReState" target="_blank" rel="noopener">github.com/YuChuang1205/ReState</a></p>
+</footer>
+
+<!-- bottom-left controls (sketch.js adds the "Crowd" on/off switch here) -->
+<nav class="sk-controls" id="sk-controls" aria-label="Page controls"></nav>
+
+<div class="lightbox" id="lightbox" hidden><img alt="" /></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="vendor/chart.umd.min.js"></script>   <!-- Chart.js 4.4.1, local copy (MIT) -->
+<script src="data.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

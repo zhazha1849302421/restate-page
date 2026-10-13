@@ -1,0 +1,102 @@
+/* ============================================================
+   intro.css — opening animation styles + timeline
+   Timeline (seconds after page load). Each step is marked "t=" below;
+   per-line start times (data-t) and per-character speed (data-s) are in index.html.
+     0.4 – 3.1   act 1  two short lines type in, char by char
+     4.0 – 4.7   act 1  zooms, blurs and fades out
+     4.7 – 9.1   act 2  "One model. One loop." + one sentence + terminal line,
+                        holds, then explodes (scale 25 + blur) at 8.35 – 9.1
+     8.9 – 9.7   title  line 1 scales in from blur; 9.4 line 2; 9.8 "States" lights up
+    10.0         ReState = Reasoning-State Refinement
+    10.9         (intro.js END) the dark background dissolves and the title flies onto
+                 the chalkboard — 1.1 s, ends ≈ 12.2 s
+   ============================================================ */
+.intro { display: none; }
+html.intro-on { overflow: hidden; }
+html.intro-on .intro, .intro.in-exit {
+  display: block; position: fixed; inset: 0; z-index: 9000; overflow: hidden;
+  --in-ink: #f3ead2;        /* paper-white text */
+  --in-bg: #121110;         /* near-black */
+  --in-stage: #b3d4fa;      /* same chalk colors as the title board */
+  --in-state: #ffad6e;
+  --in-marker: #ffe066;
+  --fly: 1100ms;            /* exit duration, set by intro.js */
+  color: var(--in-ink); cursor: pointer;
+}
+/* the cursor stick figure stays above the overlay and turns light on the dark background */
+html.intro-on .sk-cursor { --ink: #f3ead2; --paper: #121110; }
+/* the real title waits under the overlay until the flying title lands on it */
+html.intro-on .title-board .title { opacity: 0; }
+
+/* ---------- background ---------- */
+.in-bg { position: absolute; inset: 0; background: var(--in-bg); transition: opacity var(--fly) cubic-bezier(.4, 0, .2, 1); }
+.in-fx, .in-fx i { position: absolute; inset: 0; pointer-events: none; }
+.in-fx { transition: opacity calc(var(--fly) * .7) ease; }
+.in-grain { opacity: .5; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .95 0 0 0 0 .85 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.in-scan { opacity: .12; background: linear-gradient(transparent 50%, #000 50%) 0 0 / 100% 6px; }
+.in-vig { background: radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,.72) 100%); }
+/* t=8.9  a soft glow rises behind the title */
+.in-glow { opacity: 0; background: radial-gradient(ellipse 60% 45% at 50% 50%, rgba(246,239,220,.14), transparent 70%); animation: in-fade 1s ease-out 8.9s forwards; }
+
+/* ---------- text layers ---------- */
+.in-stage { position: absolute; inset: 0; }
+.in-act, .in-final { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 5vw; }
+.in-act p, .in-final p, .in-final h2 { margin: 0; }
+.in-ch { opacity: 0; filter: blur(8px); animation: in-ch .45s ease forwards; }
+
+.in-act1 { text-shadow: 0 0 30px rgba(255,255,255,.45), 0 0 10px rgba(255,255,255,.7);
+  animation: in-out1 .7s cubic-bezier(.5, 0, .75, 0) 4.0s forwards; }               /* t=4.0 */
+.in-l1, .in-l2 { font: 700 clamp(1.8rem, 4.8vw, 3.6rem)/1.25 'Caveat', 'Segoe Print', cursive; letter-spacing: .01em; }
+.in-l2 { margin-top: .5rem !important; opacity: .92; letter-spacing: .05em; }
+
+.in-act2 { opacity: 0; animation: in-act2 4.4s ease-in-out 4.7s forwards; }        /* t=4.7 – 9.1 */
+.in-m { font: clamp(1.25rem, 2.9vw, 2.15rem)/1.5 'Patrick Hand', 'Comic Sans MS', sans-serif; text-shadow: 0 2px 18px rgba(0,0,0,.6); }
+.in-term { margin-top: 2.2rem !important; font: clamp(.85rem, 1.7vw, 1.15rem) 'Courier New', Courier, monospace; letter-spacing: .22em;
+  color: var(--in-marker); text-shadow: 0 0 14px rgba(255,224,102,.7); }
+.in-term sub { font-size: .7em; letter-spacing: 0; }
+.in-caret { font-style: normal; margin-left: .4em; opacity: 0; animation: in-blink 1s steps(1) 7.0s infinite; }
+
+/* final title: same proportions as the chalkboard title (line 1 = 1.15x line 2) so it can fly onto it */
+.in-final { pointer-events: none; }
+.in-title { font: 700 clamp(1.3rem, 5vw, 4.8rem)/1.08 'Caveat', 'Segoe Print', cursive; letter-spacing: .005em; white-space: nowrap; color: #f6f2e6;
+  text-shadow: 0 0 .18em rgba(255,255,255,.35), 0 0 .5em rgba(255,255,255,.12);
+  opacity: 0; animation: in-title .8s ease-out 8.9s forwards; }                     /* t=8.9 */
+.in-tl { display: block; width: fit-content; margin: 0 auto; }
+.in-tl:first-child { font-size: 1.15em; }
+.in-stage-w { color: var(--in-stage); text-shadow: 0 0 .2em rgba(150,195,250,.55); }
+.in-tl2 { opacity: 0; animation: in-line2 .6s ease-out 9.4s forwards; }            /* t=9.4 line 2 */
+.in-state-w { color: var(--in-state); animation: in-flare .6s ease-out 9.8s forwards; }   /* t=9.8 */
+.in-exp { margin-top: 1.1rem !important; font: clamp(.9rem, 2vw, 1.3rem) 'Patrick Hand', sans-serif; color: var(--in-marker);
+  opacity: 0; animation: in-up .6s ease-out 10.0s forwards; }                       /* t=10.0 */
+.in-exp b { color: var(--in-state); font-weight: 400; }
+@media (max-width: 600px) { .in-tail { display: block; } }   /* phones: same line breaks as the board title */
+
+.in-skip { position: absolute; right: 1.6rem; bottom: 1.4rem; z-index: 2; font: 1rem 'Patrick Hand', sans-serif; letter-spacing: .08em;
+  color: rgba(243,234,210,.7); background: transparent; border: 1.5px solid rgba(243,234,210,.45); border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  padding: .35rem 1rem; cursor: pointer; transition: color .2s, border-color .2s; }
+.in-skip:hover { color: #fff; border-color: #fff; }
+
+/* ---------- exit (intro.js END, or Skip): background dissolves, title flies onto the board ---------- */
+.intro.in-exit { pointer-events: none; cursor: auto; }
+.intro.in-exit .in-bg, .intro.in-exit .in-fx { opacity: 0; }
+.intro.in-exit .in-act, .intro.in-exit .in-skip { visibility: hidden; }
+.intro.in-exit .in-exp { animation: none; opacity: 0; }
+.intro.in-exit .in-title, .intro.in-exit .in-tl2 { animation: none; opacity: 1; filter: none; }
+.intro.in-exit .in-state-w { animation: none; text-shadow: 0 0 .18em rgba(255,150,80,.9), 0 0 .55em rgba(255,130,60,.5); }
+
+@keyframes in-ch { to { opacity: 1; filter: blur(0); } }
+@keyframes in-fade { to { opacity: 1; } }
+@keyframes in-out1 { to { opacity: 0; filter: blur(20px); transform: scale(1.1); } }
+@keyframes in-act2 {
+  0%   { opacity: 0; filter: blur(10px); transform: scale(1); }
+  8%   { opacity: 1; filter: blur(0); transform: scale(1); }
+  83%  { opacity: 1; filter: blur(0); transform: scale(1); }
+  100% { opacity: 0; filter: blur(20px); transform: scale(25); }
+}
+@keyframes in-title { from { opacity: 0; filter: blur(16px); transform: scale(1.5); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
+@keyframes in-line2 { from { opacity: 0; filter: blur(10px); transform: translateY(.15em); } to { opacity: 1; filter: blur(0); transform: none; } }
+@keyframes in-flare { to { text-shadow: 0 0 .18em rgba(255,150,80,.9), 0 0 .55em rgba(255,130,60,.5); } }
+@keyframes in-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes in-blink { 0% { opacity: 0; } 50% { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) { .intro { display: none !important; } }

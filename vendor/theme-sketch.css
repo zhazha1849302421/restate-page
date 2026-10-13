@@ -1,0 +1,319 @@
+/* ============================================================
+   theme-sketch.css — hand-drawn stick-figure notebook theme
+   Loaded only for  index.html?theme=sketch  (THEME LOADER in index.html),
+   together with vendor/rough.js (MIT) and sketch.js.
+   - This file: paper, fonts, colors, and the CSS side of every box
+     (boxes become transparent; sketch.js draws their rough.js frames).
+   - sketch.js: rough frames, stick figures, cursor, background crowd.
+   Every rule is scoped under html.theme-sketch.
+   To tweak colors / fonts: edit the first variable block.
+   ============================================================ */
+/* fonts (Caveat, Patrick Hand, Inter) are loaded by the <link> in index.html */
+
+html.theme-sketch {
+  --paper: #f6efdc;  --paper-2: #efe5c9;  --card: #fffdf6;
+  --ink: #2b2b2b;    --dim: #6a6255;      --rule: #d9cdb0;
+  --stage: #2f6db5;  --stage-50: #e3edf8;
+  --state: #e0632e;  --state-50: #fde8dc;
+  --ok: #2e8b57;     --ok-50: #e2f3e6;
+  --err: #d1342c;    --err-50: #fde2df;
+  --warn: #c27c0e;   --warn-50: #fdf0d6;
+  --mind: #8a6fd1;   --chart-gray: #bdb39a; --chart-gray-dark: #8d846f;
+  --marker: #ffe066;                       /* highlighter yellow */
+  --f-sans: 'Patrick Hand', 'Comic Sans MS', 'Segoe Print', system-ui, sans-serif;   /* UI + body */
+  --f-serif: 'Caveat', 'Patrick Hand', 'Segoe Print', cursive;                      /* titles */
+  --f-mono: 'Patrick Hand', ui-monospace, monospace;
+  --f-read: 'Inter', system-ui, sans-serif;  /* long reading text (CoT) + table numbers */
+  --hand-r: 255px 15px 225px 15px / 15px 225px 15px 255px;  /* wobbly CSS border for small dynamic chips */
+  --r: 0px;
+}
+
+/* ---------- paper: notebook lines + red margin + grain ---------- */
+/* decorations (crowd, frames, coffee stains) may poke past the edge: never show a sideways scrollbar */
+html.theme-sketch { overflow-x: hidden; }
+html.theme-sketch body { position: relative; min-height: 100%; overflow-x: clip; background: var(--paper); color: var(--ink); font: 17.5px/1.6 var(--f-sans); }
+html.theme-sketch body::before {
+  position: absolute; inset: 0; z-index: -1; opacity: 1;
+  background-image:
+    linear-gradient(90deg, transparent 52px, rgba(209,52,44,.32) 52px, rgba(209,52,44,.32) 54px, transparent 54px),
+    repeating-linear-gradient(to bottom, transparent 0 29px, rgba(70,120,190,.15) 29px 30px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .25 0 0 0 .10 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: auto, auto, 180px 180px;
+}
+html.theme-sketch ::selection { background: var(--marker); color: var(--ink); }
+
+/* rough.js frame layer that sketch.js puts inside each decorated box */
+html.theme-sketch .sk-box { isolation: isolate; }
+html.theme-sketch .sk-deco { position: absolute; z-index: -1; pointer-events: none; overflow: visible; }
+html.theme-sketch .sk-deco.sk-top { z-index: 2; }
+html.theme-sketch .sk-tape { mix-blend-mode: multiply; }
+
+/* ---------- top bar ---------- */
+/* bottom edge = straight pencil line (tiled SVG, wobble <= 1px) — no rough.js arc over the nav */
+html.theme-sketch .bar { border-bottom: 0; backdrop-filter: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='4'%3E%3Cpath d='M0 2.2 Q30 1.4 60 2.1 T120 2.3 T180 1.7 T240 2.2' fill='none' stroke='%232b2b2b' stroke-opacity='.6' stroke-width='1.5'/%3E%3C/svg%3E") repeat-x left bottom / 240px 4px,
+    rgba(246,239,220,.93); }
+/* brand: robot logo (head + body layers, eyelids) and the word; each reacts to hover on its own (main.js initBrand) */
+html.theme-sketch .brand { font: 700 1.7rem var(--f-serif); display: inline-flex; align-items: center; gap: .5rem; }
+html.theme-sketch .brand-bot { position: relative; flex: none; width: 43px; height: 56px; margin: -10px 0; }
+html.theme-sketch .brand-bot > span, html.theme-sketch .brand-bot img { position: absolute; inset: 0; width: 100%; height: 100%; }
+html.theme-sketch .brand-bot img { filter: drop-shadow(1px 2px 0 rgba(43,43,43,.14)); transform-origin: 50% 100%; }
+html.theme-sketch .bot-head { transform-origin: 49.3% 56.5%; transition: transform .6s cubic-bezier(.34, 1.9, .5, 1); }   /* pivot = neck */
+html.theme-sketch .bot-body { transform-origin: 50% 100%; transition: transform .6s cubic-bezier(.34, 1.7, .5, 1); }
+html.theme-sketch .brand-bot:hover .bot-head, html.theme-sketch .brand-bot.poke .bot-head { transform: rotate(-12deg); }
+html.theme-sketch .brand-bot:hover .bot-body, html.theme-sketch .brand-bot.poke .bot-body { transform: rotate(2.5deg); }
+html.theme-sketch .brand-bot:hover .bot-body img, html.theme-sketch .brand-bot.poke .bot-body img { animation: bot-bob .55s ease-out, bot-breathe 2.6s ease-in-out .55s infinite; }
+/* eyelids: visor-colored ovals over the two eyes; .blink closes them for ~140 ms */
+html.theme-sketch .bot-lid { position: absolute; top: 37.5%; width: 9.6%; height: 9.9%; border-radius: 50%; background: #0a2a5c; transform: scaleY(0); transform-origin: 50% 0; transition: transform .07s ease-in; }
+html.theme-sketch .bot-lid.l { left: 32.4%; } html.theme-sketch .bot-lid.r { left: 58.4%; }
+html.theme-sketch .brand-bot.blink .bot-lid { transform: scaleY(1.05); }
+html.theme-sketch .brand-word { display: inline-flex; }
+html.theme-sketch .brand-word span { display: inline-block; transform-origin: 50% 85%; transition: transform .55s cubic-bezier(.34, 1.9, .5, 1); }
+html.theme-sketch .brand-word .st { transition-delay: .05s; }
+html.theme-sketch .brand-word:hover span, html.theme-sketch .brand-word.poke span { transform: rotate(-6deg); }
+@keyframes bot-bob { 35% { transform: translateY(2px) scaleY(.94); } 70% { transform: translateY(-1.5px) scaleY(1.03); } }
+@keyframes bot-breathe { 50% { transform: translateY(-.8px) scaleY(1.015); } }
+html.theme-sketch .nav a { font-size: 1.08rem; font-weight: 400; color: var(--dim); border: 0; }
+html.theme-sketch .nav a:hover, html.theme-sketch .nav a.on { color: var(--ink); background: linear-gradient(transparent 60%, var(--marker) 60% 92%, transparent 92%); }
+
+/* ---------- hero ---------- */
+html.theme-sketch .hero, html.theme-sketch .block { position: relative; }
+/* ---------- title chalkboard ----------
+   frame, board, dust, chalk tray: sketch.js KIND.chalkboard; teacher figure: sketch.js boardTeacher().
+   The full paper title is one <h1>: line 1 is 1.15x line 2. Lines never wrap
+   (main.js fitBanner() shrinks the whole title when the longer line would not fit).
+   Glow: soft white on all text, blue on "Stages", strongest orange on "States";
+   static, except one flare when the opening animation ends (.lit).
+   Board width = --bw (wider than the content column). */
+html.theme-sketch .hero { padding-top: 3.2rem; row-gap: .4rem; align-items: start; }   /* row 2: left text column and right animation start level */
+html.theme-sketch .title-board {
+  --bw: min(calc(100vw - 2 * clamp(28px, 8vw, 130px)), 78rem);
+  grid-column: 1 / -1; position: relative; text-align: center; min-width: 0; width: var(--bw);
+  margin: 0 0 3.6rem calc(50% - var(--bw) / 2);
+  padding: clamp(1rem, 2.4vw, 2.1rem) clamp(1rem, 3vw, 2.6rem) clamp(1.5rem, 3.2vw, 2.8rem); }
+html.theme-sketch .title { font-family: var(--f-serif); font-weight: 700; font-size: clamp(1.45rem, 4.7vw, 4.3rem); line-height: 1.08; letter-spacing: .005em;
+  margin: 0; padding: .38em 0 .22em;   /* room for the loop arrow + glow inside the chalk-grain mask */
+  white-space: nowrap; color: #f6f2e6; -webkit-text-stroke: .01em currentColor; transition: opacity .35s ease;
+  text-shadow: 0 0 .18em rgba(255,255,255,.30), 0 0 .5em rgba(255,255,255,.10);
+  /* chalk grain: tiny gaps in the strokes */
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.3' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 2.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.3' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 2.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E"); }
+html.theme-sketch .title .t-line { display: block; width: fit-content; margin: 0 auto; }
+html.theme-sketch .title .t-line:first-child { font-size: 1.15em; }
+html.theme-sketch .title abbr { text-decoration: none; cursor: help; }
+html.theme-sketch .title .w-stage { color: #b3d4fa; text-shadow: 0 0 .2em rgba(150,195,250,.55), 0 0 .55em rgba(150,195,250,.22); }
+html.theme-sketch .title .w-state { position: relative; display: inline-block; color: #ffad6e;
+  text-shadow: 0 0 .18em rgba(255,150,80,.9), 0 0 .55em rgba(255,130,60,.5), 0 0 1.1em rgba(255,120,50,.22); }
+html.theme-sketch .title .t-loop { position: absolute; right: -.3em; top: -.24em; width: .55em; height: .55em; overflow: visible; filter: drop-shadow(0 0 .07em rgba(255,224,102,.9)); }
+html.theme-sketch .title .t-loop path { fill: none; stroke: #ffe066; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+html.theme-sketch .title-board.lit .w-state { animation: sk-flare 1.8s ease-in-out; }
+@keyframes sk-flare {
+  0%   { text-shadow: 0 0 .1em rgba(255,150,80,.4); }
+  45%  { text-shadow: 0 0 .25em rgba(255,170,100,1), 0 0 .9em rgba(255,130,60,.8), 0 0 1.8em rgba(255,120,50,.45); }
+  100% { text-shadow: 0 0 .18em rgba(255,150,80,.9), 0 0 .55em rgba(255,130,60,.5), 0 0 1.1em rgba(255,120,50,.22); }
+}
+html.theme-sketch .hero-text .expand { margin: 0 0 .2rem; font-size: clamp(1rem, 1.6vw, 1.15rem); }
+
+/* ---------- authors + buttons, written on the chalkboard ---------- */
+html.theme-sketch .title-board .authors { text-align: center; margin: clamp(.7rem, 1.8vw, 1.3rem) auto 0; max-width: 60rem; }
+html.theme-sketch .title-board .names .au { white-space: nowrap; }   /* never split a name across lines */
+html.theme-sketch .title-board .names { margin: 0; font: 700 clamp(.95rem, 1.75vw, 1.5rem)/1.6 var(--f-serif); color: #f0ecdc; }
+html.theme-sketch .title-board .names a { color: #f0ecdc; text-decoration: none;
+  background: linear-gradient(transparent 84%, rgba(255,224,102,.85) 84% 96%, transparent 96%) no-repeat 0 0 / 0% 100%; transition: background-size .25s, color .25s; }
+html.theme-sketch .title-board .names a:hover { background-size: 100% 100%; color: #fffdf6; }
+html.theme-sketch .title-board .authors sup { font-size: .62em; color: #ffc98a; margin-left: .06em; }
+html.theme-sketch .title-board .affils { margin: .45rem 0 0; font-size: clamp(.82rem, 1.45vw, 1.12rem); color: #cfd8c9; }
+html.theme-sketch .title-board .affils sup { color: #ffc98a; }
+html.theme-sketch .title-board .anote { margin: .2rem 0 0; font-size: clamp(.75rem, 1.2vw, .95rem); color: #a8b4a6; }
+html.theme-sketch .title-board .links { justify-content: center; margin: clamp(.9rem, 2vw, 1.5rem) 0 0; gap: .5rem .7rem; }
+html.theme-sketch .title-board .btn { color: #f3efe0; }
+html.theme-sketch .title-board .btn.primary { color: #2b2b2b; }   /* sits on the yellow chalk fill */
+/* "soon" buttons: dashed pencil look, clearly not clickable yet */
+html.theme-sketch .btn.soon { opacity: .62; }
+html.theme-sketch .btn.soon small { font-size: .74em; color: var(--state); letter-spacing: .04em; }
+@media (max-width: 600px) {
+  html.theme-sketch .hero { padding-left: .75rem; padding-right: .75rem; }
+  html.theme-sketch .title-board { margin-bottom: 3rem; padding: .5rem .6rem 1rem; }
+  html.theme-sketch .title .t-tail { display: block; width: fit-content; margin: 0 auto; }   /* phones: "Unified Iterative Reasoning" / "for MLLMs" */
+}
+html.theme-sketch .subtitle { color: #3d3a34; }
+html.theme-sketch .expand { font-size: 1.05rem; }
+html.theme-sketch .btn { background: transparent; border: 0; border-radius: 0; color: var(--ink); font-size: 1.05rem; padding: .55rem 1.1rem; transform: none; }
+html.theme-sketch .btn:hover { transform: translate(0, -1px); }
+html.theme-sketch .btn:active { transform: translate(1px, 2px); }
+html.theme-sketch .btn.primary { background: transparent; color: var(--ink); }
+html.theme-sketch .btn svg { stroke-width: 2.2; }
+html.theme-sketch .hero-text { display: flex; flex-direction: column; }
+html.theme-sketch .stats { gap: 1.1rem; margin-top: 6.2rem; }   /* room above the notes for the figures standing on them (and their speech) */
+html.theme-sketch .stat { background: transparent; border: 0; padding: 1rem .9rem .9rem; }
+html.theme-sketch .stat:nth-child(odd) { rotate: -1.4deg; } html.theme-sketch .stat:nth-child(even) { rotate: 1.1deg; }
+html.theme-sketch .stat b { font: 700 2rem var(--f-serif); }
+html.theme-sketch .stat span { font-size: .86rem; color: #4a463e; }
+/* hero illustration: hide the classic robots/chain, sketch.js draws a whiteboard scene */
+html.theme-sketch .hero-visual { background: transparent; border: 0; padding: 0; min-height: 0; overflow: visible; }
+html.theme-sketch .hero-visual::before, html.theme-sketch .hero-visual > :not(.sk-scene) { display: none; }
+html.theme-sketch .sk-scene { width: 100%; height: auto; overflow: visible; }
+html.theme-sketch .sk-scene text { font-family: var(--f-serif); fill: var(--ink); }
+html.theme-sketch .sk-chalk-note { font: 700 17px var(--f-serif); fill: rgba(244,241,232,.2); }
+
+/* ---------- TL;DR = speech bubble from the professor ---------- */
+html.theme-sketch .tldr { position: relative; }
+html.theme-sketch .tldr p { background: transparent; border: 0; margin-left: 120px; padding: 1.2rem 1.4rem; font-size: 1.12rem; }
+html.theme-sketch .tag { background: var(--ink); border-radius: var(--hand-r); font-family: var(--f-sans); font-size: .85rem; }
+
+/* ---------- section heads ---------- */
+html.theme-sketch .block.alt { background: transparent; border: 0; }
+html.theme-sketch .sec-num { position: relative; display: inline-block; font: 700 1.35rem var(--f-serif); color: var(--state); padding: 0 .5rem; }
+html.theme-sketch .sec-head h2 { position: relative; font: 700 clamp(2.4rem, 4.6vw, 3.1rem)/1.05 var(--f-serif); padding-bottom: .35rem; }
+html.theme-sketch .lede { font-size: 1.12rem; color: #3d3a34; }
+html.theme-sketch .note, html.theme-sketch figcaption { font-size: .95rem; color: var(--dim); }
+html.theme-sketch .kicker { font: 1rem var(--f-sans); letter-spacing: .03em; color: var(--state); }
+html.theme-sketch .card h3, html.theme-sketch .evidence h3 { font: 700 1.55rem var(--f-serif); }
+html.theme-sketch .sk-doodle { position: absolute; pointer-events: none; opacity: .6; }
+html.theme-sketch .sk-stain { position: absolute; pointer-events: none; z-index: 0; }
+
+/* ---------- generic boxes: transparent, frame comes from rough.js ---------- */
+html.theme-sketch .card, html.theme-sketch .evidence, html.theme-sketch .paradigm-wrap, html.theme-sketch .wide-fig,
+html.theme-sketch .q-panel, html.theme-sketch .r-card, html.theme-sketch .timeline, html.theme-sketch .pipeline li,
+html.theme-sketch .dom, html.theme-sketch .fd, html.theme-sketch .gcard, html.theme-sketch .props li, html.theme-sketch .ds-stats div {
+  background: transparent; border: 0; box-shadow: none; border-radius: 0;
+}
+html.theme-sketch .card, html.theme-sketch .evidence { padding: 1.4rem 1.5rem; }
+html.theme-sketch .sk-perch-host { margin-top: 4.6rem !important; }
+
+/* small dynamic chips: wobbly CSS borders (they re-render too often for rough.js) */
+html.theme-sketch .box, html.theme-sketch .sc, html.theme-sketch .slot, html.theme-sketch .tnode, html.theme-sketch .q-opts li,
+html.theme-sketch .r-choice, html.theme-sketch .r-verb, html.theme-sketch .ursm-flow span, html.theme-sketch .loop3 span,
+html.theme-sketch .eq, html.theme-sketch .pipeline li > span, html.theme-sketch .chain .node, html.theme-sketch .op {
+  border-radius: var(--hand-r); border-width: 2px; border-style: solid;
+}
+html.theme-sketch .eq { border-color: var(--ink); background: rgba(255,253,246,.7); font-family: var(--f-sans); font-size: 1rem; }
+html.theme-sketch .loop3 span { border-color: var(--state); }
+html.theme-sketch .q-opts li { border-color: rgba(43,43,43,.4); }
+html.theme-sketch .pipeline li > span { border-color: #fff; outline: 2px solid var(--ink); outline-offset: 1px; border-radius: 50% 45% 55% 48%; }
+html.theme-sketch .pipeline li::after { display: none; }
+html.theme-sketch .pipeline li { padding: 1.2rem 1.25rem; }
+html.theme-sketch .box { border-color: var(--ink); }
+html.theme-sketch .box.blue { border-color: var(--stage); } html.theme-sketch .box.orange { border-color: var(--state); }
+html.theme-sketch .gap-note .warn { border-radius: 45% 55% 50% 48%; }
+
+/* ---------- controls ---------- */
+html.theme-sketch .toggle, html.theme-sketch .seg { background: transparent; border: 0; padding: 4px 6px; box-shadow: none; }
+html.theme-sketch .tg, html.theme-sketch .seg button { background: transparent !important; box-shadow: none !important; color: var(--dim) !important; font: 1.05rem var(--f-sans); }
+html.theme-sketch .tg.on, html.theme-sketch .seg button.on { color: var(--ink) !important; font-weight: 700; }
+html.theme-sketch .mini, html.theme-sketch .copy, html.theme-sketch .case-tabs button, html.theme-sketch .ut {
+  background: transparent; border: 0; border-radius: 0; color: var(--ink); font-family: var(--f-sans); font-size: 1rem;
+}
+html.theme-sketch .case-tabs button.on, html.theme-sketch .ut.on { background: transparent; color: var(--ink); font-weight: 700; }
+html.theme-sketch .r-controls .play { background: transparent; color: var(--ink); }
+html.theme-sketch .mini:active, html.theme-sketch .case-tabs button:active { transform: translate(1px, 2px); }
+
+/* ---------- 01 evidence matrices: cross-hatch instead of solid cells ---------- */
+html.theme-sketch .mat { font-family: var(--f-read); }
+html.theme-sketch .mat td { border-radius: var(--hand-r); border: 1.5px solid rgba(43,43,43,.35); }
+html.theme-sketch .mat td.up { color: #1d5e3a; background:
+  repeating-linear-gradient(45deg, rgba(46,139,87,calc(.18 + var(--a) * .6)) 0 2px, transparent 2px 6px),
+  repeating-linear-gradient(-45deg, rgba(46,139,87,calc(.10 + var(--a) * .4)) 0 1.5px, transparent 1.5px 7px); }
+html.theme-sketch .mat td.down { color: #8e1f14; background:
+  repeating-linear-gradient(45deg, rgba(209,52,44,calc(.18 + var(--a) * .6)) 0 2px, transparent 2px 6px),
+  repeating-linear-gradient(-45deg, rgba(209,52,44,calc(.10 + var(--a) * .4)) 0 1.5px, transparent 1.5px 7px); }
+
+/* ---------- 02 method ---------- */
+html.theme-sketch .props li { padding: .75rem .9rem .75rem 2rem; }
+html.theme-sketch .props li:nth-child(odd) { rotate: -1deg; } html.theme-sketch .props li:nth-child(even) { rotate: .8deg; }
+html.theme-sketch .props b { font-family: var(--f-serif); font-size: 1.8rem; }
+html.theme-sketch .wide-fig { padding: 1.3rem; }
+html.theme-sketch .wide-fig img, html.theme-sketch details.orig img { border-radius: 0; }
+
+/* ---------- 03 demo ---------- */
+html.theme-sketch .r-panel { position: relative; padding-top: 78px; }
+html.theme-sketch .timeline { padding: clamp(.8rem, 2vw, 1.1rem) clamp(.8rem, 2.6vw, 1.4rem); overflow: visible; }
+html.theme-sketch .tline { height: 0; border-top: 2.5px dashed #b9ad8f; background: none; }
+html.theme-sketch .tline.lit { border-top-color: var(--state); background: none; }
+html.theme-sketch .tnode { font-family: var(--f-sans); font-size: clamp(.85rem, 2.2vw, 1rem); }
+html.theme-sketch .tnode.cur { box-shadow: none; transform: scale(1.15) rotate(-3deg); }
+html.theme-sketch .r-card { margin-top: 40px; padding: 1.3rem 1.5rem; }
+html.theme-sketch .r-cot { font-family: var(--f-read); font-size: .93rem; }
+html.theme-sketch .q-panel { padding: 1rem 1rem 1.4rem; rotate: -.8deg; }
+html.theme-sketch .q-panel img { border-radius: 0; border: 0; }
+html.theme-sketch details.ref p { font-family: var(--f-read); }
+html.theme-sketch mark { border-radius: 0; padding: 0 .15em; }
+html.theme-sketch mark.err { background: linear-gradient(transparent 52%, rgba(209,52,44,.25) 52% 92%, transparent 92%); text-decoration: underline wavy rgba(209,52,44,.75); text-underline-offset: 4px; }
+html.theme-sketch mark.fix { background: linear-gradient(transparent 50%, rgba(46,139,87,.28) 50% 92%, transparent 92%); }
+html.theme-sketch mark.warnm { background: linear-gradient(transparent 50%, rgba(255,200,40,.5) 50% 92%, transparent 92%); }
+
+/* ---------- 04 dataset ---------- */
+html.theme-sketch .ds-stats div { padding: .9rem 1rem; }
+html.theme-sketch .ds-stats div:nth-child(odd) { rotate: 1deg; } html.theme-sketch .ds-stats div:nth-child(even) { rotate: -1.2deg; }
+html.theme-sketch .ds-stats b { font: 700 2rem var(--f-serif); color: var(--stage); }
+html.theme-sketch .pipeline { gap: 1.6rem; }
+html.theme-sketch .domains { gap: 1rem; }
+html.theme-sketch .dom { padding: 1.1rem 68px .9rem 1rem; min-height: 112px; }
+html.theme-sketch .dom b { font: 700 1.45rem var(--f-serif); }
+html.theme-sketch .dom:hover { transform: rotate(-1deg) translateY(-2px); }
+html.theme-sketch .dom small { font-family: var(--f-sans); font-size: .85rem; }
+
+/* ---------- 05 results ---------- */
+html.theme-sketch .fd { padding: 1.5rem 1.2rem 1rem; }
+html.theme-sketch .fd:nth-child(1) { rotate: -.9deg; } html.theme-sketch .fd:nth-child(2) { rotate: .6deg; } html.theme-sketch .fd:nth-child(3) { rotate: -.4deg; }
+html.theme-sketch .fd b { display: inline; color: var(--ink); font: 700 1.45rem var(--f-serif); background: linear-gradient(transparent 55%, var(--marker) 55% 90%, transparent 90%); }
+html.theme-sketch .fd p { color: #3d3a34; font-size: 1rem; }
+html.theme-sketch .tbl td { font-family: var(--f-read); }
+html.theme-sketch .tbl th { font-family: var(--f-sans); font-size: .95rem; text-transform: none; letter-spacing: 0; }
+html.theme-sketch .tbl th, html.theme-sketch .tbl td { border-bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='6'%3E%3Cpath d='M0 3 Q10 0.5 20 3 T40 3' fill='none' stroke='%232b2b2b' stroke-opacity='.35' stroke-width='1.2'/%3E%3C/svg%3E") left bottom / 40px 6px repeat-x; }
+html.theme-sketch .tbl tr.hl td { color: var(--ink);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='30'%3E%3Cpath d='M0 25 L9 5 L18 25' stroke='%23ffd93b' stroke-width='10' stroke-linecap='round' fill='none' opacity='.75'/%3E%3C/svg%3E") left center / 18px 100% repeat-x; }
+html.theme-sketch .tbl td.best { font-weight: 700;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'%3E%3Cpath d='M10 24 C8 7 86 3 93 17 C99 31 32 39 13 31 C3 26 9 13 24 9' fill='none' stroke='%23e0632e' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+html.theme-sketch .tbl tr.hl td.best { background:
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'%3E%3Cpath d='M10 24 C8 7 86 3 93 17 C99 31 32 39 13 31 C3 26 9 13 24 9' fill='none' stroke='%23e0632e' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") center / 100% 100% no-repeat,
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='30'%3E%3Cpath d='M0 25 L9 5 L18 25' stroke='%23ffd93b' stroke-width='10' stroke-linecap='round' fill='none' opacity='.75'/%3E%3C/svg%3E") left center / 18px 100% repeat-x; }
+html.theme-sketch .tbl .yes { color: var(--ok); } html.theme-sketch .tbl small.dl { font-family: var(--f-sans); }
+
+/* ---------- 06 gallery = polaroids ---------- */
+html.theme-sketch .gcard { overflow: visible; padding: 10px 10px 0; }
+html.theme-sketch .gcard:nth-child(3n+1) { rotate: -1.6deg; } html.theme-sketch .gcard:nth-child(3n+2) { rotate: 1.2deg; } html.theme-sketch .gcard:nth-child(3n) { rotate: -.6deg; }
+html.theme-sketch .gcard:hover { rotate: 0deg; transform: translateY(-6px) scale(1.02); border: 0; }
+html.theme-sketch .gthumb { border: 0; border-radius: 0; }
+html.theme-sketch .gcard figcaption { font-family: var(--f-sans); }
+html.theme-sketch .gcard b { font: 700 1.4rem var(--f-serif); }
+html.theme-sketch .gds { font-family: var(--f-sans); font-size: .85rem; }
+
+/* ---------- 07 / BibTeX / footer ---------- */
+html.theme-sketch .limits { position: relative; padding-bottom: 3.6rem; font-size: 1.08rem; }
+html.theme-sketch .bib { padding: .4rem; }
+html.theme-sketch .bib pre { background: transparent; color: #f4f1e8; font: 1.08rem/1.55 var(--f-sans); text-shadow: 0 0 1px rgba(255,255,255,.35); border: 0; }
+html.theme-sketch .copy { color: #f4f1e8; }
+html.theme-sketch .foot { padding-bottom: 150px; font-size: 1rem; }
+
+/* ---------- stick figures (markup generated by sketch.js) ---------- */
+html.theme-sketch .sk-actor { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 3; }
+html.theme-sketch .sk-actor path, html.theme-sketch .sk-actor circle, html.theme-sketch .sk-scene .sk-fig path, html.theme-sketch .sk-scene .sk-fig circle {
+  fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round;
+}
+html.theme-sketch .sk-actor .sk-head, html.theme-sketch .sk-scene .sk-fig .sk-head { fill: var(--paper); }
+html.theme-sketch .sk-actor .sk-eye, html.theme-sketch .sk-scene .sk-fig .sk-eye, html.theme-sketch .sk-actor .sk-fillink, html.theme-sketch .sk-scene .sk-fig .sk-fillink { fill: var(--ink); stroke: none; }
+html.theme-sketch .sk-actor .sk-thin, html.theme-sketch .sk-scene .sk-fig .sk-thin { stroke-width: 1.2; }
+html.theme-sketch .sk-actor rect, html.theme-sketch .sk-scene .sk-fig rect { fill: var(--card); stroke: var(--ink); }
+html.theme-sketch .sk-actor .sk-solid, html.theme-sketch .sk-scene .sk-fig .sk-solid { stroke: none; }
+html.theme-sketch .sk-actor text, html.theme-sketch .sk-scene .sk-fig text { font-family: var(--f-serif); font-weight: 700; fill: var(--ink); stroke: none; }
+html.theme-sketch .sk-actor .sk-hit { fill: transparent; stroke: none; pointer-events: all; cursor: pointer; }
+html.theme-sketch .sk-cursor { position: fixed; z-index: 9999; pointer-events: none; transition: opacity .2s; }
+html.sk-cursor-on, html.sk-cursor-on * { cursor: none !important; }
+
+/* background crowd (fixed strip at the bottom of the window) */
+html.theme-sketch .sk-crowd { position: fixed; left: 0; right: 0; bottom: 0; height: 112px; z-index: 55; pointer-events: none;
+  background: linear-gradient(to bottom, transparent 62%, rgba(246,239,220,.78) 86%, rgba(246,239,220,.92)); }
+html.theme-sketch .sk-crowd .sk-ground { position: absolute; left: 0; top: 0; overflow: visible; }
+html.theme-sketch .sk-crowd.off { display: none; }
+html.theme-sketch .sk-controls { bottom: 120px; border: 2px solid var(--ink); border-radius: var(--hand-r); background: rgba(255,253,246,.95); font-family: var(--f-sans); font-size: .9rem; box-shadow: 3px 3px 0 rgba(43,43,43,.15); }
+html.theme-sketch .sk-controls a.on { background: var(--ink); border-radius: var(--hand-r); }
+
+@media (max-width: 1100px) { html.theme-sketch .sk-wide-only { display: none; } }
+@media (max-width: 760px) {
+  html.theme-sketch .tldr p { margin-left: 74px; }
+  html.theme-sketch .stat, html.theme-sketch .fd, html.theme-sketch .gcard, html.theme-sketch .q-panel { rotate: 0deg; }
+  html.theme-sketch .sk-mid-only { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { html.sk-cursor-on, html.sk-cursor-on * { cursor: auto !important; } }
