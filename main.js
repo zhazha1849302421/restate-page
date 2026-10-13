@@ -366,7 +366,7 @@ function initMisc() {
       () => toast('Copy failed — select the text manually'));
   }));
   $$('[data-todo]').forEach(a => a.addEventListener('click', e => {
-    if (a.getAttribute('href') === '#') { e.preventDefault(); toast('Link will be available soon'); }
+    if (a.getAttribute('href') === '#') { e.preventDefault(); toast(a.dataset.todo === 'code' ? 'Code will be released soon' : 'Link will be available soon'); }
   }));
   const lb = $('#lightbox');
   document.addEventListener('click', e => {

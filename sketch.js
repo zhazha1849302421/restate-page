@@ -361,9 +361,10 @@ const KIND = {
     svgEl('rect', { x: p + w * 0.36, y: p + h + 1, width: 10, height: 4, fill: '#f6c7d4' }, s);
   },
   btn(rc, s, w, h, p, i, el) {
-    const onBoard = !!el.closest('.bib'), on = el.classList.contains('on'), hot = el.classList.contains('primary') || el.classList.contains('play');
+    const onBoard = !!el.closest('.bib, .title-board'), on = el.classList.contains('on'), hot = el.classList.contains('primary') || el.classList.contains('play');
     const o = { ...R0, stroke: onBoard ? '#f4f1e8' : C.ink, strokeWidth: 1.7, roughness: 1.4, seed: 191 + i };
-    if (on || hot) Object.assign(o, { fill: el.classList.contains('play') ? C.state : C.marker, fillStyle: 'hachure', hachureGap: 3.5, fillWeight: 1.4, hachureAngle: -50 });
+    if (on || hot) Object.assign(o, { fill: el.classList.contains('play') ? C.state : C.marker,
+      fillStyle: onBoard ? 'solid' : 'hachure', hachureGap: 3.5, fillWeight: 1.4, hachureAngle: -50 });   // solid on the dark board so the label stays readable
     else if (el._skHover) Object.assign(o, { fill: onBoard ? 'rgba(244,241,232,.5)' : 'rgba(43,43,43,.35)', fillStyle: 'hachure', hachureGap: 5, fillWeight: 0.8 });
     s.append(rc.rectangle(p, p, w, h, o));
   },
@@ -617,14 +618,15 @@ function demoWalker() {
 /* ---- hero sticky notes: tiny figures on top of each note ---- */
 function noteFigures() {
   const cfg = [
-    { poseFn: P.cheer, mood: 'happy', say: '9B!' },
+    { poseFn: P.cheer, mood: 'happy' },   // no speech here: this figure stands under the "ReState = ..." line
     { poseFn: (t) => ({ ...P.point(t), aR1: 2.1 }), dir: -1 },
     { poseFn: P.jump, jumpy: true, mood: 'happy' },
     { poseFn: P.wave, say: 'just me' },
   ];
   $$('.hero .stat').forEach((el, i) => {
     const c = cfg[i % 4];
-    const a = own({ parent: el, k: 0.95, dir: c.dir || 1, poseFn: c.poseFn, mood: c.mood, greet: true });
+    // greet: false — these figures stand right under the "ReState = ..." line, a "hi!" bubble would cover it
+    const a = own({ parent: el, k: 0.95, dir: c.dir || 1, poseFn: c.poseFn, mood: c.mood });
     a.brain = (dt, now) => {
       a.x = el.offsetWidth - 22; a.y = 2;
       if (c.jumpy) a.jump = Math.abs(Math.sin(a.t * 3)) * 9;

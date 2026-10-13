@@ -5,8 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>ReState — From Stages to States: Unified Iterative Reasoning for MLLMs</title>
 <meta name="description" content="ReState reformulates multimodal chain-of-thought from a stage-driven pipeline into a state-driven iterative process: one MLLM constructs, preserves, and corrects its own reasoning state." />
-<!-- Keep out of search engines for now. Remove this meta tag when the page goes public. -->
-<meta name="robots" content="noindex, nofollow" />
+<!-- citation_* tags are what Google Scholar reads to index a paper page.
+     TODO: uncomment citation_pdf_url once the PDF / arXiv entry is online. -->
+<meta name="citation_title" content="From Stages to States: Unified Iterative Reasoning for Multimodal Large Language Models" />
+<meta name="citation_author" content="Chuang Yu" />
+<meta name="citation_author" content="Xuefei Ma" />
+<meta name="citation_author" content="Yuanhao Feng" />
+<meta name="citation_author" content="Wuxiong Zeng" />
+<meta name="citation_author" content="Bo Wang" />
+<meta name="citation_author" content="Minghong Cai" />
+<meta name="citation_author" content="Dongming Wu" />
+<meta name="citation_author" content="Fei Zhou" />
+<meta name="citation_author" content="Chen Tang" />
+<meta name="citation_author" content="Wenwen Tong" />
+<meta name="citation_author" content="Lewei Lu" />
+<meta name="citation_author" content="Xiangyu Yue" />
+<meta name="citation_publication_date" content="2026" />
+<!-- <meta name="citation_pdf_url" content="https://.../restate.pdf" /> -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="ReState — From Stages to States" />
+<meta property="og:description" content="One MLLM constructs, preserves, and corrects its own reasoning state." />
+<meta property="og:image" content="assets/fig1.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="icon" type="image/png" href="assets/favicon.png" />
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
 <!-- fonts: local copies (Caveat, Patrick Hand, Inter — SIL OFL). No external requests: the page works offline and loads fast in every region. -->
@@ -89,19 +109,39 @@
       <span class="t-line">From <span class="w-stage">Stages</span> to <span class="w-state">States<svg class="t-loop" viewBox="0 0 40 40" aria-hidden="true"><path d="M31.3 13.5 A13 13 0 1 1 20 7" /><path d="M14.5 2.5 L20.5 7 L15 11.5" /></svg></span>:</span>
       <span class="t-line">Unified Iterative Reasoning <span class="t-tail">for <abbr title="Multimodal Large Language Models">MLLMs</abbr></span></span>
     </h1>
+
+    <!-- authors: <sup> numbers match the affiliation line; &dagger; = corresponding author -->
+    <div class="authors">
+      <p class="names">
+      <span class="au"><a href="https://yuchuang1205.github.io/" target="_blank" rel="noopener">Chuang Yu</a><sup>1</sup>,</span>
+      <span class="au"><a href="https://openreview.net/profile?id=~Xuefei_Ma1" target="_blank" rel="noopener">Xuefei Ma</a><sup>2</sup>,</span>
+      <span class="au"><a href="https://scholar.google.com/citations?hl=zh-CN&user=emdXrWoAAAAJ" target="_blank" rel="noopener">Yuanhao Feng</a><sup>3</sup>,</span>
+      <span class="au"><a href="https://scholar.google.com/citations?hl=zh-CN&user=pU_OpsMAAAAJ" target="_blank" rel="noopener">Wuxiong Zeng</a><sup>3</sup>,</span>
+      <span class="au"><a href="https://openreview.net/profile?id=~Bo_Wang50" target="_blank" rel="noopener">Bo Wang</a><sup>3</sup>,</span>
+      <span class="au"><a href="https://onevfall.github.io/personal_page/" target="_blank" rel="noopener">Minghong Cai</a><sup>1</sup>,</span>
+      <span class="au"><a href="https://wudongming97.github.io/" target="_blank" rel="noopener">Dongming Wu</a><sup>1</sup>,</span>
+      <span class="au"><a href="https://scholar.google.com/citations?user=Sd2wRM4AAAAJ&hl=zh-CN" target="_blank" rel="noopener">Fei Zhou</a><sup>1</sup>,</span>
+      <span class="au"><a href="https://www.chentang.cc/" target="_blank" rel="noopener">Chen Tang</a><sup>1</sup>,</span>
+      <span class="au"><a href="https://scholar.google.com/citations?hl=zh-CN&user=aGhHuEIAAAAJ" target="_blank" rel="noopener">Wenwen Tong</a><sup>4</sup>,</span>
+      <span class="au"><a href="https://scholar.google.com/citations?user=zdgKJXIAAAAJ&hl=zh-CN" target="_blank" rel="noopener">Lewei Lu</a><sup>5</sup>,</span>
+      <span class="au"><a href="https://xyue.io/" target="_blank" rel="noopener">Xiangyu Yue</a><sup>1&dagger;</sup></span>
+      </p>
+      <p class="affils"><sup>1</sup>MMLab, CUHK &nbsp;·&nbsp; <sup>2</sup>PolyU &nbsp;·&nbsp; <sup>3</sup>Tencent &nbsp;·&nbsp; <sup>4</sup>Peking University &nbsp;·&nbsp; <sup>5</sup>CPII</p>
+      <p class="anote">&dagger; Corresponding author</p>
+    </div>
+
+    <div class="links">
+      <!-- TODO: replace href with the arXiv / PDF link once it is online -->
+      <a class="btn primary" href="#" data-todo="paper"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z M14 2v6h6" /></svg>Paper</a>
+      <a class="btn" href="https://github.com/YuChuang1205/ReState" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6" /></svg>Code</a>
+      <a class="btn" href="#dataset"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>VersaCoT-10K</a>
+      <a class="btn" href="#cite"><svg viewBox="0 0 24 24"><path d="M7 7h4v4H8v3H5v-4zM15 7h4v4h-3v3h-3v-4z"/></svg>BibTeX</a>
+    </div>
   </div>
 
   <div class="hero-text">
     <p class="expand"><b><span class="w-stage">Re</span><span class="w-state">State</span></b> = <b>Re</b>asoning-<b>State</b> Refinement</p>
 
-    <div class="links">
-      <!-- TODO: replace href with the PDF / OpenReview link -->
-      <a class="btn primary" href="#" data-todo="paper"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z M14 2v6h6" /></svg>Paper</a>
-      <!-- TODO: replace href with the code repository link -->
-      <a class="btn" href="#" data-todo="code"><svg viewBox="0 0 24 24"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6" /></svg>Code</a>
-      <a class="btn" href="#dataset"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>VersaCoT-10K</a>
-      <a class="btn" href="#cite"><svg viewBox="0 0 24 24"><path d="M7 7h4v4H8v3H5v-4zM15 7h4v4h-3v3h-3v-4z"/></svg>BibTeX</a>
-    </div>
 
     <!-- Headline numbers (all from the paper; see data.js header for sources) -->
     <div class="stats">
@@ -482,10 +522,13 @@
   </div>
   <div class="bib">
     <button class="copy" data-target="bib-code">Copy</button>
-<pre id="bib-code"><code>@inproceedings{restate2026,
-  title     = {From Stages to States: Unified Iterative Reasoning for MLLMs},
-  booktitle = {Submitted to The Fifteenth International Conference on Learning Representations},
-  year      = {2026}
+<pre id="bib-code"><code>@article{restate2026,
+  title   = {From Stages to States: Unified Iterative Reasoning for Multimodal Large Language Models},
+  author  = {Chuang Yu and Xuefei Ma and Yuanhao Feng and Wuxiong Zeng and Bo Wang and
+             Minghong Cai and Dongming Wu and Fei Zhou and Chen Tang and Wenwen Tong and
+             Lewei Lu and Xiangyu Yue},
+  journal = {arXiv preprint},
+  year    = {2026}
 }</code></pre>
   </div>
 </section>
@@ -493,7 +536,7 @@
 </main>
 
 <footer class="foot">
-  <p class="dim">Data and code will be open-sourced.</p>
+  <p class="dim">Code and data: <a href="https://github.com/YuChuang1205/ReState" target="_blank" rel="noopener">github.com/YuChuang1205/ReState</a></p>
 </footer>
 
 <!-- bottom-left controls (sketch.js adds the "Crowd" on/off switch here) -->
